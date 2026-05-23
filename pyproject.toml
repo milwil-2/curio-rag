@@ -16,3 +16,6 @@ dependencies = [
 
 [project.scripts]
 curio = "curio.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["curio*"]
