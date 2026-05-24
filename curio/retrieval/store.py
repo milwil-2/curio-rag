@@ -34,7 +34,7 @@ def add_chunks(chunks: list[Chunk], name="chunks", overwrite=False):
     data = [c.model_dump() for c in chunks]
     table.add(data, mode="overwrite" if overwrite else "append")
 
-def search_table(query_vector: list[float], k=5, name="chunks"):
+def search_table(query_vector: list[float], k=5, name="chunks") -> list[dict]:
      """ Search table using query_vector and return top k results."""
      table = get_or_create_table(name)
      results = table.search(query_vector).limit(k).to_list()
