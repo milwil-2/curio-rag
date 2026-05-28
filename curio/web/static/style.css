@@ -306,6 +306,58 @@ main {
   font-size: 12px;
 }
 
+/* Per-method benchmark scorecard (appears under each column header on retrieval) */
+.metric {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fdfcfa;
+  padding: 10px 12px;
+}
+
+.metric-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.metric-row {
+  display: flex;
+  gap: 16px;
+}
+
+.metric-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.metric-k {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.metric-val {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.metric-val.up {
+  color: var(--accent);
+}
+
+.metric-note {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--faint);
+  font-style: italic;
+}
+
 /* Grid */
 .grid {
   display: grid;
