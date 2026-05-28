@@ -147,6 +147,8 @@ function fillFromExample() {
 }
 
 $input.addEventListener("keydown", (e) => {
+  // While a run is in flight the field is locked; don't mutate it.
+  if (inFlight) return;
   if (e.key === "Tab" && !e.shiftKey && !$input.value && currentExample) {
     e.preventDefault();
     fillFromExample();
@@ -158,17 +160,61 @@ $shuffleBtn.addEventListener("click", () => pickRandomExample());
 
 // ---------- Question flow ----------
 
+// Run state: a single run owns one retrieve fetch and three answer streams.
+let inFlight = false;
+let retrieveController = null; // AbortController for the /api/retrieve fetch
+let activeStreams = []; // EventSource objects currently open
+
 $form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  // Pressing Enter in the readonly field during a run must do nothing.
+  if (inFlight) return;
   const q = $input.value.trim();
   if (q.length < 3) return;
   await runQuestion(q);
 });
 
+// One click handler: when running, the submit button acts as Stop.
+$submit.addEventListener("click", (e) => {
+  if (inFlight) {
+    e.preventDefault();
+    stopRun();
+  }
+});
+
+function stopRun() {
+  // Abort the retrieve fetch if it's still in flight.
+  if (retrieveController) {
+    try {
+      retrieveController.abort();
+    } catch (_) {}
+  }
+  // Close every open answer stream.
+  closeAllStreams();
+  setRunning(false);
+  setStatus("Stopped.");
+}
+
+function closeAllStreams() {
+  // Snapshot: each done() splices the stream out of activeStreams as it runs.
+  for (const es of activeStreams.slice()) {
+    if (typeof es._done === "function") {
+      es._done(); // closes the socket and resolves its pending promise
+    } else {
+      try {
+        es.close();
+      } catch (_) {}
+    }
+  }
+  activeStreams = [];
+}
+
 async function runQuestion(question) {
   clearColumns();
-  setSubmitDisabled(true);
+  setRunning(true);
   setStatus("Retrieving chunks…");
+
+  retrieveController = new AbortController();
 
   let retrieveData;
   try {
@@ -176,18 +222,24 @@ async function runQuestion(question) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
+      signal: retrieveController.signal,
     });
     if (res.status === 429) {
       setStatus("Rate limited. Please slow down and try again in a minute.");
-      setSubmitDisabled(false);
+      setRunning(false);
       return;
     }
     if (!res.ok) throw new Error("retrieve failed: " + res.status);
     retrieveData = await res.json();
   } catch (err) {
+    // A Stop during retrieval aborts the fetch -> AbortError. stopRun() has
+    // already unlocked and set the status, so don't clobber it.
+    if (err && err.name === "AbortError") return;
     setStatus("Retrieval failed. Please try again.");
-    setSubmitDisabled(false);
+    setRunning(false);
     return;
+  } finally {
+    retrieveController = null;
   }
 
   for (const s of STRATEGIES) {
@@ -196,15 +248,18 @@ async function runQuestion(question) {
 
   setStatus("Generating answers…");
 
-  // Stream all three in parallel; re-enable button when every one closes.
+  // Stream all three in parallel; unlock when every one closes.
   const closes = STRATEGIES.map((s) => streamAnswer(s, question));
   try {
     await Promise.allSettled(closes);
   } finally {
-    setStatus("");
-    setSubmitDisabled(false);
-    // After a question finishes, surface a fresh suggestion for the next ask.
-    pickRandomExample();
+    // If a Stop already unlocked us, leave its "Stopped." status alone.
+    if (inFlight) {
+      setStatus("");
+      setRunning(false);
+      // After a question finishes, surface a fresh suggestion for the next ask.
+      pickRandomExample();
+    }
   }
 }
 
@@ -222,6 +277,7 @@ function streamAnswer(strategy, question) {
       encodeURIComponent(question);
 
     const es = new EventSource(url);
+    activeStreams.push(es);
     let settled = false;
     const done = () => {
       if (settled) return;
@@ -230,8 +286,13 @@ function streamAnswer(strategy, question) {
       try {
         es.close();
       } catch (_) {}
+      const i = activeStreams.indexOf(es);
+      if (i !== -1) activeStreams.splice(i, 1);
       resolve();
     };
+    // Expose the resolver so a Stop can settle this promise (not just close
+    // the socket) and avoid leaving Promise.allSettled pending forever.
+    es._done = done;
 
     es.onmessage = (event) => {
       let payload;
@@ -348,9 +409,17 @@ function setStatus(msg) {
   setText($status, msg || "");
 }
 
-function setSubmitDisabled(disabled) {
-  $submit.disabled = disabled;
-  $submit.textContent = disabled ? "Working…" : "Compare";
+function setRunning(running) {
+  inFlight = running;
+  // Lock the question with readonly (not disabled) so the text stays visible.
+  $input.readOnly = running;
+  // Lock the example-suggestion controls so they can't mutate the field.
+  $exampleBtn.disabled = running;
+  $shuffleBtn.disabled = running;
+  // The submit button stays ENABLED while running so it can act as Stop.
+  $submit.disabled = false;
+  $submit.textContent = running ? "Stop" : "Compare";
+  $submit.classList.toggle("stopping", running);
 }
 
 // ---------- Init ----------
