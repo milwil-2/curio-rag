@@ -20,11 +20,23 @@ const $shuffleBtn = document.getElementById("shuffle-btn");
 
 // ---------- Eval banner ----------
 
+// Eval data (recall@k + multipliers) cached from /api/eval, reused for the
+// per-column benchmark scorecards.
+let evalData = null;
+
+// Maps a column's data-strategy id to the eval JSON's strategy key.
+const EVAL_KEY = {
+  naive: "Naive dense",
+  hybrid: "Hybrid (RRF)",
+  hybrid_rerank: "Hybrid + rerank",
+};
+
 async function loadEvalBanner() {
   try {
     const res = await fetch("/api/eval");
     if (!res.ok) throw new Error("eval fetch failed");
     const data = await res.json();
+    evalData = data;
     renderEvalBanner(data);
   } catch (err) {
     setText($evalBanner, "Eval stats unavailable.");
@@ -244,6 +256,7 @@ async function runQuestion(question) {
 
   for (const s of STRATEGIES) {
     renderChunks(s, retrieveData[s] || []);
+    renderMetric(s);
   }
 
   setStatus("Generating answers…");
@@ -334,7 +347,70 @@ function clearColumns() {
     setText(panelEl(s, "chunks"), "");
     setText(panelEl(s, "answer"), "");
     panelEl(s, "answer").classList.remove("error", "streaming");
+    clearMetric(s);
   }
+}
+
+function clearMetric(strategy) {
+  const el = panelEl(strategy, "metric");
+  if (!el) return;
+  while (el.firstChild) el.removeChild(el.firstChild);
+  el.hidden = true;
+}
+
+// Per-method benchmark scorecard. Shows the eval's recall-multiplier vs the
+// dense baseline at k=1/3/5. This is the AGGREGATE eval result (15 fixtures),
+// not a score for the live query — the note makes that explicit.
+function renderMetric(strategy) {
+  const el = panelEl(strategy, "metric");
+  if (!el) return;
+  while (el.firstChild) el.removeChild(el.firstChild);
+
+  const mult = evalData && evalData.multipliers_vs_naive;
+  if (!mult) {
+    el.hidden = true;
+    return;
+  }
+
+  const isBaseline = strategy === "naive";
+
+  const title = document.createElement("div");
+  title.className = "metric-title";
+  title.textContent = isBaseline ? "Dense baseline" : "Recall vs baseline";
+  el.appendChild(title);
+
+  const row = document.createElement("div");
+  row.className = "metric-row";
+  for (const k of ["1", "3", "5"]) {
+    const cell = document.createElement("span");
+    cell.className = "metric-cell";
+
+    const kEl = document.createElement("span");
+    kEl.className = "metric-k";
+    kEl.textContent = "@" + k;
+
+    const vEl = document.createElement("span");
+    vEl.className = "metric-val";
+    if (isBaseline) {
+      vEl.textContent = "1.0×";
+    } else {
+      const m = mult[k] && mult[k][EVAL_KEY[strategy]];
+      vEl.textContent = typeof m === "number" ? m.toFixed(1) + "×" : "—";
+      if (typeof m === "number" && m > 1.0) vEl.classList.add("up");
+    }
+
+    cell.appendChild(kEl);
+    cell.appendChild(vEl);
+    row.appendChild(cell);
+  }
+  el.appendChild(row);
+
+  const note = document.createElement("div");
+  note.className = "metric-note";
+  note.textContent = "eval benchmark · 15 fixtures, not this query";
+  el.appendChild(note);
+
+  el.hidden = false;
 }
 
 function renderChunks(strategy, chunks) {
