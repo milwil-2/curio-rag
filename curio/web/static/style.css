@@ -180,6 +180,15 @@ main {
   cursor: not-allowed;
 }
 
+/* While a run is in flight the submit button becomes a Stop control. */
+#submit-btn.stopping {
+  background: #b3261e;
+}
+
+#submit-btn.stopping:hover:not(:disabled) {
+  background: #8c1d18;
+}
+
 .hint {
   display: flex;
   align-items: center;
