@@ -1,4 +1,4 @@
-// Curio frontend — vanilla JS, no deps.
+// Curio frontend: vanilla JS, no deps.
 // Behavior:
 //   1. On load: fetch /api/eval and render the banner.
 //   2. On submit: clear columns, POST /api/retrieve, render chunks per strategy,
@@ -178,7 +178,7 @@ async function runQuestion(question) {
       body: JSON.stringify({ question }),
     });
     if (res.status === 429) {
-      setStatus("Rate limited — please slow down and try again in a minute.");
+      setStatus("Rate limited. Please slow down and try again in a minute.");
       setSubmitDisabled(false);
       return;
     }
@@ -251,7 +251,7 @@ function streamAnswer(strategy, question) {
         return;
       }
       if (typeof payload.delta === "string") {
-        // textContent append — safe against any HTML in the model output.
+        // textContent append: safe against any HTML in the model output.
         $answer.appendChild(document.createTextNode(payload.delta));
       }
     };

@@ -32,7 +32,7 @@ EVAL_RESULTS_PATH = Path(__file__).parent.parent.parent / "evals" / "results.jso
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-llm = GeminiClient()  # module-level — initialized once; fail fast if API key missing
+llm = GeminiClient()  # module-level; initialized once; fail fast if API key missing
 
 
 class RetrieveRequest(BaseModel):
@@ -94,7 +94,7 @@ def index():
 @app.get("/api/eval")
 def eval_stats():
     if not EVAL_RESULTS_PATH.exists():
-        return {"error": "results.json not generated yet — run evals/retrieval_eval.py"}
+        return {"error": "results.json not generated yet; run evals/retrieval_eval.py"}
     return json.loads(EVAL_RESULTS_PATH.read_text())
 
 
