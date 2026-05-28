@@ -14,6 +14,9 @@ const $input = document.getElementById("question");
 const $submit = document.getElementById("submit-btn");
 const $status = document.getElementById("status");
 const $evalBanner = document.getElementById("eval-banner");
+const $exampleBtn = document.getElementById("example-btn");
+const $exampleText = document.getElementById("example-text");
+const $shuffleBtn = document.getElementById("shuffle-btn");
 
 // ---------- Eval banner ----------
 
@@ -103,6 +106,56 @@ function formatMultiplier(v) {
   return String(v);
 }
 
+// ---------- Example questions ----------
+
+let examplePool = [];
+let currentExample = null;
+
+async function loadExamples() {
+  try {
+    const res = await fetch("/api/examples?n=20");
+    if (!res.ok) throw new Error("examples fetch failed");
+    const data = await res.json();
+    examplePool = Array.isArray(data.examples) ? data.examples : [];
+    pickRandomExample();
+  } catch (_) {
+    setText($exampleText, "Ask something about quantum mechanics or thermodynamics…");
+    $exampleBtn.disabled = true;
+    $shuffleBtn.disabled = true;
+  }
+}
+
+function pickRandomExample() {
+  if (!examplePool.length) return;
+  let next;
+  // Avoid immediately repeating the same example.
+  do {
+    next = examplePool[Math.floor(Math.random() * examplePool.length)];
+  } while (examplePool.length > 1 && next === currentExample);
+  currentExample = next;
+  setText($exampleText, currentExample);
+  $input.placeholder = currentExample;
+}
+
+function fillFromExample() {
+  if (!currentExample) return;
+  $input.value = currentExample;
+  $input.focus();
+  // Move cursor to end so Backspace edits work intuitively.
+  const end = $input.value.length;
+  $input.setSelectionRange(end, end);
+}
+
+$input.addEventListener("keydown", (e) => {
+  if (e.key === "Tab" && !e.shiftKey && !$input.value && currentExample) {
+    e.preventDefault();
+    fillFromExample();
+  }
+});
+
+$exampleBtn.addEventListener("click", () => fillFromExample());
+$shuffleBtn.addEventListener("click", () => pickRandomExample());
+
 // ---------- Question flow ----------
 
 $form.addEventListener("submit", async (e) => {
@@ -150,6 +203,8 @@ async function runQuestion(question) {
   } finally {
     setStatus("");
     setSubmitDisabled(false);
+    // After a question finishes, surface a fresh suggestion for the next ask.
+    pickRandomExample();
   }
 }
 
@@ -301,3 +356,4 @@ function setSubmitDisabled(disabled) {
 // ---------- Init ----------
 
 loadEvalBanner();
+loadExamples();

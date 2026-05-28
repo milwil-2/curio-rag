@@ -44,6 +44,29 @@
           />
           <button id="submit-btn" type="submit">Compare</button>
         </form>
+        <div class="hint" id="example-hint">
+          <span class="hint-label">Try:</span>
+          <button
+            type="button"
+            id="example-btn"
+            class="example-btn"
+            title="Click or press Tab to fill"
+          >
+            <span id="example-text">Loading example…</span>
+          </button>
+          <button
+            type="button"
+            id="shuffle-btn"
+            class="shuffle-btn"
+            aria-label="Shuffle example question"
+            title="Shuffle"
+          >
+            ↻
+          </button>
+          <span class="hint-kbd">
+            <kbd>Tab</kbd> to autocomplete
+          </span>
+        </div>
         <div id="status" class="status" aria-live="polite"></div>
       </section>
 

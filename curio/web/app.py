@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 from typing import Literal
 
@@ -42,6 +43,31 @@ Strategy = Literal["naive", "hybrid", "hybrid_rerank"]
 RERANK_CANDIDATES = 10
 TOP_K = 5
 
+# Questions known to have answers in the QM + thermodynamics corpus
+# (derived from evals/retrieval_eval.py fixtures plus a few variety prompts).
+EXAMPLE_QUESTIONS = [
+    "Who is considered the father of thermodynamics and what did he publish in 1824?",
+    "What does the zeroth law of thermodynamics state?",
+    "Why is the zeroth law called 'zeroth' rather than another number?",
+    "Who invented matrix mechanics?",
+    "What did Louis de Broglie propose about particles in 1923?",
+    "What is the many-worlds interpretation of quantum mechanics?",
+    "What is a qubit?",
+    "What does wave function collapse mean?",
+    "What is the Bohr model and what discovery preceded it?",
+    "What is the predicted heat death of the universe?",
+    "Who is the Born rule named after?",
+    "What is the Copenhagen interpretation of quantum mechanics?",
+    "What is quantum entanglement?",
+    "What is the Schrödinger equation used for?",
+    "What did Einstein's 1905 paper on the photoelectric effect demonstrate?",
+    "How does the second law of thermodynamics define entropy?",
+    "What is the measurement problem in quantum mechanics?",
+    "What is a Hamiltonian in quantum mechanics?",
+    "How does cooling work from a thermodynamic perspective?",
+    "How can a deterministic theory produce a probabilistic measurement outcome?",
+]
+
 
 def _retrieve(strategy: Strategy, question: str) -> list[dict]:
     if strategy == "naive":
@@ -70,6 +96,11 @@ def eval_stats():
     if not EVAL_RESULTS_PATH.exists():
         return {"error": "results.json not generated yet — run evals/retrieval_eval.py"}
     return json.loads(EVAL_RESULTS_PATH.read_text())
+
+
+@app.get("/api/examples")
+def examples(n: int = Query(8, ge=1, le=len(EXAMPLE_QUESTIONS))):
+    return {"examples": random.sample(EXAMPLE_QUESTIONS, n)}
 
 
 @app.post("/api/retrieve")
