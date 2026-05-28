@@ -21,6 +21,7 @@ def ingest_topic(topic: str, limit: int = 5) -> None:
             chunk.vector = vector
         store.add_chunks(chunks)
         print("Stored:", len(chunks))
+    store.create_fts_index("text")
         
 def main():
     ingest_topic("quantum mechanics")

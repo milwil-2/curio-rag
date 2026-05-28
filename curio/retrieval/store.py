@@ -2,8 +2,7 @@ from lancedb.pydantic import LanceModel, Vector
 import lancedb
 from curio.config import LANCE_PATH
 from curio.ingest.chunker import Chunk
-import curio.ingest.chunker as ch
-import curio.retrieval.embed as em
+from curio.retrieval.embed import embed_query
 
 db = lancedb.connect(LANCE_PATH)
 
@@ -33,53 +32,49 @@ def add_chunks(chunks: list[Chunk], name="chunks", overwrite=False):
     table = get_or_create_table(name)
     data = [c.model_dump() for c in chunks]
     table.add(data, mode="overwrite" if overwrite else "append")
+    table.optimize()
+    
+def create_fts_index(column:str, name: str = "chunks"):
+    table = get_or_create_table(name)
+    table.create_fts_index(column, replace=True)
 
 def search_table(query_vector: list[float], k=5, name="chunks") -> list[dict]:
      """ Search table using query_vector and return top k results."""
      table = get_or_create_table(name)
-     results = table.search(query_vector).limit(k).to_list()
+     results = table.search(query=query_vector).limit(k).to_list()
      return results
 
+def sparse_search(query_text: str, k: int = 5, fts_columns:str = "text", name: str = "chunks"):
+    table = get_or_create_table(name)
+    results = table.search(query=query_text, fts_columns=[fts_columns]).limit(k).to_list()
+    return results
+
+def hybrid_search(query_text: str, k: int=5, K: int = 60, name: str="chunks", fts_columns:str = "text"):
+    """ Search table using query_vector and using dense + BM25 to return top k results."""
+    query_vector = embed_query(query_text)
+    sparse_results = sparse_search(query_text=query_text, k=k, fts_columns=fts_columns, name=name)
+    dense_results = search_table(query_vector=query_vector, k=k, name=name)
+    
+    scores = {}  # chunk id → combined score
+    for i, r in enumerate(dense_results):
+        scores[r["id"]] = scores.get(r["id"], 0) + 1 / (i + 1 + K)
+    for i, r in enumerate(sparse_results):
+        scores[r["id"]] = scores.get(r["id"], 0) + 1 / (i + 1 + K)
+    
+    all_results = {r["id"]: r for r in dense_results + sparse_results}
+
+    sorted_scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:k]
+    results = []
+    for id, _ in sorted_scores:
+        if id in all_results:
+            r = {key: v for key, v in all_results[id].items() if key != "vector"}            
+            results.append(r)
+    return results
 
 
-def main() -> None:
-    # 1. Connect: this just opens (or creates) a folder.
-    sample = (
-        "Thermodynamics is the branch of physics that deals with heat, work, "
-        "and temperature, and their relation to energy, entropy, and the physical "
-        "properties of matter and radiation. The behavior of these quantities is "
-        "governed by the four laws of thermodynamics, which convey a quantitative "
-        "description using measurable macroscopic physical quantities, but may be "
-        "explained in terms of microscopic constituents by statistical mechanics. "
-    ) * 30
 
-    chunks = ch.chunk_text(sample, source="wiki/Thermodynamics", url="ex.com", chunk_size=200, overlap=30)
-    vectors = em.embed_batch([c.text for c in chunks])
-    for chunk, vector in zip(chunks, vectors):
-      chunk.vector = vector
-
-
-    # 3. Create the table from these rows (schema is inferred).
-    add_chunks(chunks, "chunks", overwrite=True)
-
-    # 4. Search: pass a query vector, get top-k nearest neighbors.
-    query_vec = em.embed_query("What is thermodynamics?")
-    results = search_table(query_vec, 3)
-
-    for r in results:
-        # `_distance` is added by LanceDB; lower = closer (for L2/cosine)
-        print(f"{r['id']:10s} dist={r['_distance']:.4f}  text={r['text'][:60]}")
-
-    # 5. Add an FTS index over the 'text' column for BM25 / hybrid search later.
-    table = get_or_create_table()
-    table.create_fts_index("text", replace=True)
-
-    # 6. With FTS in place, you can do keyword search too:
-    keyword_results = table.search("entropy", query_type="fts").limit(3).to_list()
-    print("\nKeyword (BM25) results:")
-    for r in keyword_results:
-        print(f"  {r['id']:10s} text={r['text'][:60]}")
-
+def main():
+    print(hybrid_search("What is thermodynamics?"))
 
 if __name__ == "__main__":
     main()

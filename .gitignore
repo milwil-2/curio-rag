@@ -12,3 +12,11 @@ wheels/
 # Data files
 data/
 traces/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store

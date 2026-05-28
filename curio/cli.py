@@ -1,8 +1,8 @@
 import argparse
-import curio.retrieval.embed as em
-import curio.ingest.pipeline as pp
-import curio.retrieval.store as st
+from curio.ingest import pipeline
+from curio.retrieval import store, rerank
 from curio.llm.ollama_client import OllamaClient
+
 
 parser = argparse.ArgumentParser(description="Curio CLI Interface")
 subparsers = parser.add_subparsers(dest='command')
@@ -43,18 +43,15 @@ def main():
     # run the RAG pipeline
         client = OllamaClient()
         question = args.question
-        query = em.embed_query(question)
-        top_chunks = st.search_table(query, k=5)
-        prompt = construct_prompt(question, top_chunks)
+        top_chunks = store.hybrid_search(question)
+        reranked = rerank.rerank(query=question, candidates=top_chunks)
+        prompt = construct_prompt(question, reranked)
         messages = [{"role": "user", "content": prompt}]
-        # Check sources
-        for c in top_chunks:
-            print(c["source"], c["_distance"])
         response = client.generate(messages)
         print(response)
 
     elif args.command == "ingest":
     # call ingest_topic
-        pp.ingest_topic(args.topic)
+        pipeline.ingest_topic(args.topic)
     else:
         parser.print_help()
