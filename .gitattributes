@@ -1,0 +1,3 @@
+# Keep this branch's minimal README during merges from main.
+# Requires (per clone): git config merge.ours.driver true
+README.md merge=ours
