@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Curio — RAG strategy comparison</title>
+    <title>Curio: RAG strategy comparison</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
@@ -75,7 +75,7 @@
           <header>
             <h2>Naive dense</h2>
             <p class="strategy-desc">
-              Pure dense vector search — fast, but misses keyword matches.
+              Pure dense vector search. Fast, but misses keyword matches.
             </p>
           </header>
           <section class="panel">
@@ -92,7 +92,7 @@
           <header>
             <h2>Hybrid (RRF)</h2>
             <p class="strategy-desc">
-              Dense + BM25 fused with Reciprocal Rank Fusion — catches lexical
+              Dense + BM25 fused with Reciprocal Rank Fusion. Catches lexical
               hits the dense model loses.
             </p>
           </header>
@@ -110,7 +110,7 @@
           <header>
             <h2>Hybrid + rerank</h2>
             <p class="strategy-desc">
-              Hybrid candidates re-scored by a cross-encoder — slowest, but
+              Hybrid candidates re-scored by a cross-encoder. Slowest, but
               usually the sharpest top-k.
             </p>
           </header>
@@ -129,7 +129,7 @@
           <span class="wip-badge">Work in progress</span>
           <h2>Where Curio is headed</h2>
           <p class="roadmap-intro">
-            What you see today is the retrieval layer — a side-by-side look at how
+            What you see today is the retrieval layer, a side-by-side look at how
             different search strategies feed an LLM. The bigger goal is for Curio to
             become an adaptive tutor. Here's what's coming next:
           </p>
@@ -139,7 +139,7 @@
             <span class="roadmap-step">Next</span>
             <h3>Agentic retrieval</h3>
             <p>
-              Instead of one fixed search, the model decides what to look up —
+              Instead of one fixed search, the model decides what to look up,
               issuing multiple searches and reading full articles to answer
               multi-hop questions on its own.
             </p>
@@ -177,7 +177,7 @@
         You're looking at the same question answered three ways. Each column
         retrieves chunks with a different strategy, then a frozen LLM
         (Gemini 2.5 Flash) generates an answer using only those chunks. Same
-        model, same corpus, different retrieval — different answers.
+        model, same corpus, different retrieval, different answers.
       </p>
       <p class="credit">
         Curio · a learning project exploring retrieval-augmented generation.
