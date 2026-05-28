@@ -1,9 +1,9 @@
 [project]
 name = "rag-learning"
 version = "0.1.0"
-description = "Add your description here"
+description = "Curio — adaptive RAG tutor"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.28.1",
     "lancedb>=0.30.2",
@@ -12,10 +12,17 @@ dependencies = [
     "rich>=15.0.0",
     "sentence-transformers>=5.5.1",
     "wikipedia-api>=0.14.1",
+    "fastapi>=0.118.0",
+    "uvicorn[standard]>=0.34.0",
+    "google-genai>=1.0.0",
+    "qdrant-client>=1.12.0",
+    "fastembed>=0.5.0",
+    "slowapi>=0.1.9",
 ]
 
 [project.scripts]
 curio = "curio.cli:main"
+curio-web = "curio.web.app:main"
 
 [tool.setuptools.packages.find]
 include = ["curio*"]

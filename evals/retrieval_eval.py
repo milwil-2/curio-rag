@@ -1,3 +1,7 @@
+import json
+from datetime import datetime
+from pathlib import Path
+
 from curio.retrieval import store, embed, rerank
 
 
@@ -91,6 +95,49 @@ def recall_at_k(ranked_ids_per_fixture: list[list[str]], expected_ids: list[str]
     return hits / len(expected_ids)
 
 
+def write_results_json(
+    results_per_strategy: dict[str, list[list[str]]],
+    expected_ids: list[str],
+    path: Path,
+) -> None:
+    """Write structured recall@k results so the web app can render the eval banner."""
+    strategy_names = list(results_per_strategy.keys())
+    ks = [1, 3, 5]
+
+    recall_at_k_map: dict[str, dict[str, float]] = {}
+    multipliers_map: dict[str, dict[str, float | None]] = {}
+
+    baseline = "Naive dense"
+
+    for k in ks:
+        per_strategy = {
+            name: round(recall_at_k(results_per_strategy[name], expected_ids, k), 3)
+            for name in strategy_names
+        }
+        recall_at_k_map[str(k)] = per_strategy
+
+        baseline_score = per_strategy.get(baseline, 0.0)
+        mult_for_k: dict[str, float | None] = {}
+        for name in strategy_names:
+            if name == baseline:
+                continue
+            if baseline_score == 0:
+                mult_for_k[name] = None
+            else:
+                mult_for_k[name] = round(per_strategy[name] / baseline_score, 3)
+        multipliers_map[str(k)] = mult_for_k
+
+    payload = {
+        "fixtures_count": len(expected_ids),
+        "strategies": strategy_names,
+        "recall_at_k": recall_at_k_map,
+        "multipliers_vs_naive": multipliers_map,
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+    }
+
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
 def main() -> None:
     strategies = [
         ("Naive dense", naive_dense),
@@ -115,6 +162,10 @@ def main() -> None:
             score = recall_at_k(results_per_strategy[name], expected_ids, k)
             print(f"  {name:20s} {score:.1%}")
         print()
+
+    results_path = Path(__file__).parent / "results.json"
+    write_results_json(results_per_strategy, expected_ids, results_path)
+    print(f"Wrote evals/results.json")
 
 
 if __name__ == "__main__":

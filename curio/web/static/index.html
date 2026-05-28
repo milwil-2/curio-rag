@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Curio — RAG strategy comparison</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <h1>Curio</h1>
+        <span class="tagline">RAG strategy comparison</span>
+      </div>
+      <div id="eval-banner" class="eval-banner" aria-live="polite">
+        Loading eval stats...
+      </div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p>
+          Curio is a learning project that asks: how much does retrieval
+          strategy actually matter for RAG quality? Each column below uses a
+          different retrieval pipeline against the same Wikipedia corpus
+          (quantum mechanics + thermodynamics articles), then asks Gemini 2.5
+          Flash to answer using only its retrieved chunks. Watch how the same
+          question produces different answers depending on which chunks make it
+          into the prompt.
+        </p>
+      </section>
+
+      <section class="ask">
+        <form id="ask-form" autocomplete="off">
+          <label for="question" class="visually-hidden">Question</label>
+          <input
+            id="question"
+            name="question"
+            type="text"
+            placeholder="Ask something about quantum mechanics or thermodynamics…"
+            minlength="3"
+            maxlength="500"
+            required
+          />
+          <button id="submit-btn" type="submit">Compare</button>
+        </form>
+        <div id="status" class="status" aria-live="polite"></div>
+      </section>
+
+      <section class="grid" aria-label="Retrieval strategy comparison">
+        <article class="col" data-strategy="naive">
+          <header>
+            <h2>Naive dense</h2>
+            <p class="strategy-desc">
+              Pure dense vector search — fast, but misses keyword matches.
+            </p>
+          </header>
+          <section class="panel">
+            <h3 class="panel-title">Retrieved chunks</h3>
+            <div class="chunks" data-role="chunks"></div>
+          </section>
+          <section class="panel">
+            <h3 class="panel-title">Answer</h3>
+            <div class="answer" data-role="answer"></div>
+          </section>
+        </article>
+
+        <article class="col" data-strategy="hybrid">
+          <header>
+            <h2>Hybrid (RRF)</h2>
+            <p class="strategy-desc">
+              Dense + BM25 fused with Reciprocal Rank Fusion — catches lexical
+              hits the dense model loses.
+            </p>
+          </header>
+          <section class="panel">
+            <h3 class="panel-title">Retrieved chunks</h3>
+            <div class="chunks" data-role="chunks"></div>
+          </section>
+          <section class="panel">
+            <h3 class="panel-title">Answer</h3>
+            <div class="answer" data-role="answer"></div>
+          </section>
+        </article>
+
+        <article class="col" data-strategy="hybrid_rerank">
+          <header>
+            <h2>Hybrid + rerank</h2>
+            <p class="strategy-desc">
+              Hybrid candidates re-scored by a cross-encoder — slowest, but
+              usually the sharpest top-k.
+            </p>
+          </header>
+          <section class="panel">
+            <h3 class="panel-title">Retrieved chunks</h3>
+            <div class="chunks" data-role="chunks"></div>
+          </section>
+          <section class="panel">
+            <h3 class="panel-title">Answer</h3>
+            <div class="answer" data-role="answer"></div>
+          </section>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        You're looking at the same question answered three ways. Each column
+        retrieves chunks with a different strategy, then a frozen LLM
+        (Gemini 2.5 Flash) generates an answer using only those chunks. Same
+        model, same corpus, different retrieval — different answers.
+      </p>
+      <p class="credit">
+        Curio · a learning project exploring retrieval-augmented generation.
+      </p>
+    </footer>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

@@ -2,6 +2,7 @@ import argparse
 from curio.ingest import pipeline
 from curio.retrieval import store, rerank
 from curio.llm.ollama_client import OllamaClient
+from curio.llm.prompts import construct_prompt
 
 
 parser = argparse.ArgumentParser(description="Curio CLI Interface")
@@ -13,27 +14,6 @@ ask_parser.add_argument("question")
 ingest_parser = subparsers.add_parser("ingest")
 ingest_parser.add_argument("topic")
 
-
-def construct_prompt(query: str, chunks: list[dict]):
-    context = """"""
-    for i, chunk in enumerate(chunks):
-        source = chunk["source"]
-        text = chunk["text"]
-        chunk_str = f"[{i}] (source: Wikipedia/{source}) {text}"
-        context += chunk_str + "\n"
-
-    prompt = f"""You are answering a question using ONLY the provided context passages.
-        If the answer isn't in the context, say so honestly. 
-
-        Context:
-        {context}
-        
-
-        Question: {query}
-
-        For every claim in your answer, add an inline citation [source: Wikipedia/ArticleName].
-        Cite all sources you draw from, not just one."""
-    return prompt
 
 def main():
     args = parser.parse_args()

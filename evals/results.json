@@ -1,0 +1,40 @@
+{
+  "fixtures_count": 15,
+  "strategies": [
+    "Naive dense",
+    "Hybrid (RRF)",
+    "Hybrid + rerank"
+  ],
+  "recall_at_k": {
+    "1": {
+      "Naive dense": 0.067,
+      "Hybrid (RRF)": 0.067,
+      "Hybrid + rerank": 0.333
+    },
+    "3": {
+      "Naive dense": 0.133,
+      "Hybrid (RRF)": 0.467,
+      "Hybrid + rerank": 0.667
+    },
+    "5": {
+      "Naive dense": 0.467,
+      "Hybrid (RRF)": 0.733,
+      "Hybrid + rerank": 0.733
+    }
+  },
+  "multipliers_vs_naive": {
+    "1": {
+      "Hybrid (RRF)": 1.0,
+      "Hybrid + rerank": 4.97
+    },
+    "3": {
+      "Hybrid (RRF)": 3.511,
+      "Hybrid + rerank": 5.015
+    },
+    "5": {
+      "Hybrid (RRF)": 1.57,
+      "Hybrid + rerank": 1.57
+    }
+  },
+  "generated_at": "2026-05-28T02:32:56.428578Z"
+}
