@@ -20,13 +20,12 @@
     <main>
       <section class="intro">
         <p>
-          Curio is a learning project that asks: how much does retrieval
-          strategy actually matter for RAG quality? Each column below uses a
-          different retrieval pipeline against the same Wikipedia corpus
-          (quantum mechanics + thermodynamics articles), then asks Gemini 2.5
-          Flash to answer using only its retrieved chunks. Watch how the same
-          question produces different answers depending on which chunks make it
-          into the prompt.
+          Curio is a learning project, implementing RAG from first principles:
+          each column below uses a different retrieval pipeline against the same
+          Wikipedia corpus (currently: quantum mechanics + thermodynamics), then
+          queries an LLM to answer using the retrieved chunks with citations.
+          Watch how the same question produces different answers depending on
+          which chunks make it into the prompt.
         </p>
       </section>
 
