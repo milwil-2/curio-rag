@@ -407,7 +407,7 @@ function renderMetric(strategy) {
 
   const note = document.createElement("div");
   note.className = "metric-note";
-  note.textContent = "eval benchmark · 15 fixtures, not this query";
+  note.textContent = "eval benchmark · 15 fixtures";
   el.appendChild(note);
 
   el.hidden = false;
