@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Curio">
+  <rect width="32" height="32" rx="7" fill="#2a5dab" />
+  <path
+    d="M21.66 21.66 A 8 8 0 1 1 21.66 10.34"
+    fill="none"
+    stroke="#fbfaf7"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+</svg>
